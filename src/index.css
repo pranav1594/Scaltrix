@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------
+   Theme colours. Values are "R G B" so Tailwind can add opacity.
+   Light = Tailwind's normal greys. Dark = the same scale reversed.
+   --------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+  --surface: 255 255 255;
+  --slate-50: 248 250 252;
+  --slate-100: 241 245 249;
+  --slate-200: 226 232 240;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+}
+
+.dark {
+  color-scheme: dark;
+  --surface: 17 26 46;
+  --slate-50: 11 17 32;
+  --slate-100: 27 39 66;
+  --slate-200: 41 54 80;
+  --slate-300: 62 77 107;
+  --slate-400: 124 138 165;
+  --slate-500: 148 163 184;
+  --slate-600: 180 192 212;
+  --slate-700: 203 213 225;
+  --slate-800: 226 232 240;
+  --slate-900: 241 245 249;
+}
+
+/* Coloured text and tints that need different shades on a dark background. */
+.dark .text-brand-600,
+.dark .text-brand-700,
+.dark .text-indigo-700 { color: #a5b4fc; }
+.dark .bg-brand-50,
+.dark .bg-indigo-50 { background-color: rgb(99 102 241 / 0.18); }
+.dark .text-green-700 { color: #4ade80; }
+.dark .text-red-600 { color: #f87171; }
+.dark .text-amber-700 { color: #fbbf24; }
+.dark .text-amber-900 { color: #fde68a; }
+.dark .bg-amber-50 { background-color: rgb(217 119 6 / 0.16); }
+
+@layer components {
+  .card { @apply rounded-xl border border-slate-200 bg-surface p-5 shadow-sm; }
+  .label { @apply mb-1 block text-sm font-medium text-slate-700; }
+  .input { @apply w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20; }
+  .btn { @apply inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50; }
+  .btn-ghost { @apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-surface px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50; }
+}
