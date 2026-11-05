@@ -819,14 +819,33 @@ function PaymentsSection({ project, rules, received }: { project: ProjectDetailR
 function SplitSection({ project }: { project: ProjectDetailRow }) {
   const extrasQ = useExtraPayouts();
   if (project.payments.length === 0) return null;
-  const empTotal = project.project_employees.reduce((a, e) => a + Number(e.share_paise), 0);
-  const founderTotal = project.project_founder_payouts.reduce((a, f) => a + Number(f.paise), 0);
+  // Extra payouts linked to THIS project are shown on top of the person's share.
+  const projectExtras = (extrasQ.data ?? []).filter((x) => x.project_id === project.id);
+  const extraFor = (kind: "employee_id" | "founder_id", id: string) =>
+    projectExtras.filter((x) => x[kind] === id).reduce((a, x) => a + Number(x.extra_paise), 0);
+  const empExtraTotal = project.project_employees.reduce((a, e) => a + extraFor("employee_id", e.employee_id), 0);
+  const founderExtraTotal = project.project_founder_payouts.reduce((a, f) => a + extraFor("founder_id", f.founder_id), 0);
+  const empTotal = project.project_employees.reduce((a, e) => a + Number(e.share_paise), 0) + empExtraTotal;
+  const founderTotal = project.project_founder_payouts.reduce((a, f) => a + Number(f.paise), 0) + founderExtraTotal;
+  const Amount = ({ share, extra }: { share: number; extra: number }) =>
+    extra > 0 ? (
+      <>
+        <div className="font-medium">{formatINR(share + extra)}</div>
+        <div className="text-xs text-slate-500">
+          {formatINR(share)} share + {formatINR(extra)} extra
+        </div>
+      </>
+    ) : (
+      <>{formatINR(share)}</>
+    );
   return (
     <section className="card mb-6">
       <h2 className="mb-3 font-semibold">Where the money went (total so far)</h2>
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
-          <div className="mb-1 text-sm font-medium">Founders ({formatINR(founderTotal)})</div>
+          <div className="mb-1 text-sm font-medium">
+            Founders ({formatINR(founderTotal)}){founderExtraTotal > 0 && <span className="font-normal text-slate-500"> incl. {formatINR(founderExtraTotal)} extra</span>}
+          </div>
           <table className="w-full text-sm">
             <tbody>
               {[...project.project_founder_payouts]
@@ -837,7 +856,9 @@ function SplitSection({ project }: { project: ProjectDetailRow }) {
                     <Fragment key={f.founder_id}>
                       <tr className="border-t border-slate-100">
                         <td className="py-1">{f.founders?.name ?? "Founder"} ({bpToPct(f.weight_bp)}%)</td>
-                        <td className="text-right">{formatINR(Number(f.paise))}</td>
+                        <td className="text-right">
+                          <Amount share={Number(f.paise)} extra={extraFor("founder_id", f.founder_id)} />
+                        </td>
                       </tr>
                       {owed.length > 0 && (
                         <tr>
@@ -853,15 +874,22 @@ function SplitSection({ project }: { project: ProjectDetailRow }) {
           </table>
         </div>
         <div>
-          <div className="mb-1 text-sm font-medium">Employees ({formatINR(empTotal)})</div>
+          <div className="mb-1 text-sm font-medium">
+            Employees ({formatINR(empTotal)}){empExtraTotal > 0 && <span className="font-normal text-slate-500"> incl. {formatINR(empExtraTotal)} extra</span>}
+          </div>
           <table className="w-full text-sm">
             <tbody>
               {[...project.project_employees]
-                .sort((a, b) => Number(b.share_paise) - Number(a.share_paise))
+                .sort(
+                  (a, b) =>
+                    Number(b.share_paise) + extraFor("employee_id", b.employee_id) - (Number(a.share_paise) + extraFor("employee_id", a.employee_id)),
+                )
                 .map((e) => (
                   <tr key={e.id} className="border-t border-slate-100">
                     <td className="py-1">{e.employees?.name ?? "Employee"}</td>
-                    <td className="text-right">{formatINR(Number(e.share_paise))}</td>
+                    <td className="py-1 text-right">
+                      <Amount share={Number(e.share_paise)} extra={extraFor("employee_id", e.employee_id)} />
+                    </td>
                   </tr>
                 ))}
             </tbody>
@@ -869,7 +897,7 @@ function SplitSection({ project }: { project: ProjectDetailRow }) {
         </div>
       </div>
       <p className="mt-3 text-xs text-slate-500">
-        The reserve share has been posted to the company reserve. Rules used: company {bpToPct(project.settings_snapshot?.companyBp ?? 0)}% /
+        Extra payouts that you linked to this project are added to the person's amount. The reserve share has been posted to the company reserve. Rules used: company {bpToPct(project.settings_snapshot?.companyBp ?? 0)}% /
         reserve {bpToPct(project.settings_snapshot?.reserveBp ?? 0)}% of that.
       </p>
     </section>
